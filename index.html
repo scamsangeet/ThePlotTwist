@@ -512,16 +512,6 @@
 
 </div>
 
-
-<form id="formspree-form" action="https://formspree.io/f/xeebwprq" method="POST" style="display:none;">
-  <input type="hidden" name="passType" id="fs-pass">
-  <input type="hidden" name="name" id="fs-name">
-  <input type="hidden" name="phone" id="fs-phone">
-  <input type="hidden" name="gender" id="fs-gender">
-  <input type="hidden" name="email" id="fs-email">
-  <input type="hidden" name="guests" id="fs-guests">
-</form>
-
 <script>
 let currentPass = 'single';
 let guestCount = 0;
@@ -573,36 +563,45 @@ function showStatus(msg, ok){
 }
 
 async function submitRegistration(){
-  const name = document.getElementById('p-name').value.trim();
-  const phone = document.getElementById('p-phone').value.trim();
-  const gender = document.getElementById('p-gender').value;
-  const email = document.getElementById('p-email').value.trim();
-
-  if(!name || !phone || !gender || !email){
-    showStatus('Fill in your name, phone number, gender, and gmail to continue.', false);
+  const name=document.getElementById('p-name').value.trim();
+  const phone=document.getElementById('p-phone').value.trim();
+  const gender=document.getElementById('p-gender').value;
+  const email=document.getElementById('p-email').value.trim();
+  if(!name||!phone||!gender||!email){
+    showStatus('Please fill all required fields.',false);
     return;
   }
-
-  const guests = [];
-  document.querySelectorAll('.guest-block').forEach(block => {
-    const id = block.id.split('-')[1];
-    const gName = document.getElementById('g-name-' + id).value.trim();
-    const gAge = document.getElementById('g-age-' + id).value.trim();
-    const gGender = document.getElementById('g-gender-' + id).value;
-    if(gName || gAge || gGender){
-      guests.push({name:gName, age:gAge, gender:gGender});
-    }
+  const guests=[];
+  document.querySelectorAll('.guest-block').forEach(block=>{
+    const id=block.id.split('-')[1];
+    guests.push({
+      name:(document.getElementById('g-name-'+id)?.value||'').trim(),
+      age:(document.getElementById('g-age-'+id)?.value||'').trim(),
+      gender:(document.getElementById('g-gender-'+id)?.value||'')
+    });
   });
-
-  document.getElementById('fs-pass').value = currentPass;
-  document.getElementById('fs-name').value = name;
-  document.getElementById('fs-phone').value = phone;
-  document.getElementById('fs-gender').value = gender;
-  document.getElementById('fs-email').value = email;
-  document.getElementById('fs-guests').value = JSON.stringify(guests);
-
-  showStatus('Submitting registration...', true);
-  document.getElementById('formspree-form').submit();
+  try{
+    const res=await fetch('https://formspree.io/f/xeebwprq',{
+      method:'POST',
+      headers:{
+        'Accept':'application/json',
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        name,phone,gender,email,
+        passType:currentPass,
+        guests
+      })
+    });
+    if(res.ok){
+      showStatus('Registration submitted successfully!',true);
+      setTimeout(()=>showView('enquire'),1200);
+    }else{
+      showStatus('Submission failed. Please try again.',false);
+    }
+  }catch(e){
+    showStatus('Network error. Please try again.',false);
+  }
 }
 
 async function loadRegistrations(){
